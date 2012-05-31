@@ -1,27 +1,26 @@
-SpreeDotpayPlPayment
+SpreePrzelewy24
 ====================
 
-Dotpay.pl payment system for Spree (>= 0.30)
+Przelewy24 payment system for Spree (>= 1.0)
 
 Install
 =======
 
 Add to your Gemfile:
 
-    gem 'spree_dotpay_pl_payment', :git => 'git://github.com/espresse/spree_dotpay_pl_payment.git'
+    gem 'spree_przelewy24', :git => 'git://github.com/matfiz/spree_przelewy24.git'
 
 and run 
 
     bundle install
 
-Dotpay.pl Settings
+Przelewy24.pl Settings
 ========
 
-You'll have to set a callback URL in your Dotpay account. Assuming that the address of your shop website is
-http://shop.example.com your callback then should be:
+You'll have to set the following parameters:
+  * seller ID
+  * CRC key
+  * success and error URL
 
-    http://shop.example.com/gateway/dotpay_pl/comeback
-
-
-This work based on https://github.com/pronix/spree-ebsin.
+This work based on https://github.com/pronix/spree-ebsin and https://github.com/espresse/spree_dotpay_pl_payment.git.
  

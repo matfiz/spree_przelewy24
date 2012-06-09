@@ -1,7 +1,7 @@
-module SpreePrzelewy24PlPayment
+module SpreePrzelewy24
   class Engine < Rails::Engine
     
-    engine_name 'spree_przelewy24_pl_payment'
+    engine_name 'spree_przelewy24'
 
     config.autoload_paths += %W(#{config.root}/lib)
     

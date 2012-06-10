@@ -19,4 +19,5 @@ Gem::Specification.new do |s|
 
 
   s.add_dependency('spree_core', '>= 1.0')
+  s.add_dependency('haml')
 end

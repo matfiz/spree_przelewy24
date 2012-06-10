@@ -1,5 +1,8 @@
 ---
 pl:
+  przelewy24:
+    info: "Kontynuuj, aby zapłacić przy użyciu serwisu Płatności24"
+    choose_channel: "Wybierz kanał płatności poniżej i kliknij dalej, aby przetworzyć płatność"
   payment_success: Płatność poprawna
   currency: Waluta
   account_id: ID konta

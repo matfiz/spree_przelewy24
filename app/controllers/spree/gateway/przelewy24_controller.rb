@@ -3,7 +3,7 @@ module Spree
   class Gateway::Przelewy24Controller < Spree::BaseController
     skip_before_filter :verify_authenticity_token, :only => [:comeback, :complete]
     
-    # Show form Przlewy24 for pay
+    # Show form Przelewy24 for pay
     def show
       @order = Order.find(params[:order_id])
       @gateway = @order.available_payment_methods.find{|x| x.id == params[:gateway_id].to_i }

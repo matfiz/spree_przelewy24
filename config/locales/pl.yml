@@ -8,15 +8,10 @@ pl:
       content: "Niestety wystąpił błąd w przetwarzaniu płatności przez Przelewy24.pl - prosimy spróbować ponownie. W razie powtarzających się problemów, prosimy o kontakt."
   payment_success: Płatność poprawna
   currency: Waluta
-  account_id: ID konta
-  dotpay_pl_payment: Zapłać w Dotpay
+  p24_id_sprzedawcy: ID sprzedawcy
+  przelewy24_payment: Zapłać w Przelewy24
   url: URL
   language: Język
-  dotpay_pl: Płatność
-  dotpay_pl_submit: "Zapłać"
-  pin: "PIN"
-  dotpay_server_1: "IP serwera Dotpay.pl"
-  dotpay_server_2: "IP serwera Dotpay.pl"
   Address: Adres
   Delivery: Dostawa
   Payment: Płatność

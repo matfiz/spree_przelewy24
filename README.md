@@ -27,3 +27,8 @@ I recommend to test it first - just select *test mode* in payment method setting
 
 This work is loosely based on https://github.com/pronix/spree-ebsin and https://github.com/espresse/spree_dotpay_pl_payment.git.
  
+------------------------------------------------------------------------------
+License
+------------------------------------------------------------------------------
+
+Copyright (c) 2011 - 2012 Grzegorz Brzezinka (@matfiz), released under the New BSD License All rights reserved.

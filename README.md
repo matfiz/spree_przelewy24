@@ -21,6 +21,9 @@ You'll have to set the following parameters:
   * seller ID
   * CRC key
   * success and error URL
+  
+In Spree Admin zone you have to create new payment method and select *Spree::PaymentMethod::Przelewy24* as a provider.
+I recommend to test it first - just select *test mode* in payment method settings and it will use sandbox platform instead of the production one.
 
-This work based on https://github.com/pronix/spree-ebsin and https://github.com/espresse/spree_dotpay_pl_payment.git.
+This work is loosely based on https://github.com/pronix/spree-ebsin and https://github.com/espresse/spree_dotpay_pl_payment.git.
  

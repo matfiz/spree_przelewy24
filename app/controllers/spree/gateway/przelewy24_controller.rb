@@ -6,18 +6,20 @@ module Spree
     # Show form Przelewy24 for pay
     def show
       @order = Order.find(params[:order_id])
-      @gateway = @order.available_payment_methods.find{|x| x.id == params[:gateway_id].to_i }
-      @order.payments.destroy_all
-      payment = @order.payments.create!(:amount => 0, :payment_method_id => @gateway.id)
-      
-      @p24_session_id = Time.now.to_f.to_s
-      @p24_crc = przelewy24_transaction_crc(@gateway,@order,@p24_session_id)
-  
-      if @order.blank? || @gateway.blank?
-        flash[:error] = I18n.t("invalid_arguments")
-        redirect_to :back
-      else
-        @bill_address, @ship_address = @order.bill_address, (@order.ship_address || @order.bill_address)
+      if params[:gateway_id]
+        @gateway = @order.available_payment_methods.find{|x| x.id == params[:gateway_id].to_i }
+        @order.payments.destroy_all
+        payment = @order.payments.create!(:amount => 0, :payment_method_id => @gateway.id)
+        
+        @p24_session_id = Time.now.to_f.to_s
+        @p24_crc = przelewy24_transaction_crc(@gateway,@order,@p24_session_id)
+    
+        if @order.blank? || @gateway.blank?
+          flash[:error] = I18n.t("invalid_arguments")
+          redirect_to :back
+        else
+          @bill_address, @ship_address = @order.bill_address, (@order.ship_address || @order.bill_address)
+        end
       end
     end
     
@@ -25,11 +27,26 @@ module Spree
       
     end
     
-    # response from przelewy24
+  
+    # Result from Przelewy24
+    def comeback
+      @order = Order.find(params[:order_id])
+      @gateway = @order && @order.payments.first.payment_method
+      @response = przelewy24_verify(@gateway,@order,params)
+      @amount = 100.0
+      @amount = params[:p24_kwota].to_f/100
+      result = @response.split("\r\n")
+      if result[1] == "TRUE"
+        przelewy24_payment_success(@amount)
+        redirect_to gateway_przelewy24_complete_path(:order_id => @order.id, :gateway_id => @gateway.id)
+      else
+        redirect_to gateway_przelewy24_error_path(:gateway_id => @gateway.id, :order_id => @order.id, :error_code => result[2], :error_descr => result[3])
+      end
+    end
+    
+    # complete the order
     def complete    
-      @order = Order.find_by_number(params[:order_id])
-      
-      
+      @order = Order.find(params[:order_id])
       
       session[:order_id]=nil
       if @order.state=="complete"
@@ -38,17 +55,7 @@ module Spree
         redirect_to order_url(@order)
       end
     end
-  
-    # Result from Przelewy24
-    def comeback
-      @order = Order.find_by_number(params[:control])
-      @gateway = @order && @order.payments.first.payment_method
-      
-      @response = przelewy24_verify(@gateway,@order,params)
-  
-      
-        render :text => @response   
-    end
+    
   
   
     private
@@ -66,27 +73,28 @@ module Spree
     
     def przelewy24_verify(gateway,order,params)
       require 'net/https'
+      require 'net/http'
       require 'open-uri'
+      require 'openssl'
       
-      params = {:p24_session_id => params[:p24_session_id], :p24_order_id => params[:p24_order_id], :p24_id_sprzedawcy => @gateway.preferred_p24_id_sprzedawcy, :p24_kwota => params[:p24_kwota], :p24_crc => params[:p24_crc]}
-      
-      url = URI.parse(@gateway.transakcja_url)
-      req = Net::HTTP::Post.new(url.path)
-      req.form_data = params
+      params_new = {:p24_session_id => params[:p24_session_id], :p24_order_id => params[:p24_order_id], :p24_id_sprzedawcy => gateway.preferred_p24_id_sprzedawcy, :p24_kwota => params[:p24_kwota]}
+      params_new[:p24_crc] = Digest::MD5.hexdigest(params[:p24_session_id]+"|"+params[:p24_order_id]+"|"+params[:p24_kwota]+"|"+gateway.preferred_crc_key)
+      #params_list = "p24_session_id=#{params_new[:p24_session_id]}&p24_order_id=#{params_new[:p24_session_id]}&p24_id_sprzedawcy=#{params_new[:p24_id_sprzedawcy]}&p24_kwota=#{params_new[:p24_kwota]}&p24_crc=#{params_new[:p24_crc]}"
+      url = URI.parse(gateway.transakcja_url)
+      req = Net::HTTP::Post.new(url.path,{"User-Agent" => "Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.10) Gecko/20100915 Ubuntu/10.04 (lucid) Firefox/3.6.10"})
+      req.form_data = params_new
       #req.basic_auth url.user, url.password if url.user
-      con = Net::HTTP.new(url.host, url.port)
+      con = Net::HTTP.new(url.host, 443)
       con.use_ssl = true
-      con.start do |http| 
-        response = http.request(req)
-        return response.body
-      end
-      
+      con.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      response = con.start {|http| http.request(req)}
+      return response.body
     end
   
     # Completed payment process
-    def przelewy24_payment_success(params)
+    def przelewy24_payment_success(amount)
       @order.payment.started_processing
-      if @order.total.to_f == params[:amount].to_f      
+      if @order.total.to_f == amount.to_f      
         @order.payment.complete     
       end    
       

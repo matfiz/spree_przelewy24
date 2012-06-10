@@ -31,9 +31,9 @@ module Spree
     
     def transakcja_url
       if preferred_test_mode
-        preferred_url_transakcja
-      else
         preferred_test_url_transakcja
+      else
+        preferred_url_transakcja
       end
     end
   

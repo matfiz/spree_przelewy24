@@ -3,6 +3,9 @@ pl:
   przelewy24:
     info: "Kontynuuj, aby zapłacić przy użyciu serwisu Płatności24"
     choose_channel: "Wybierz kanał płatności poniżej i kliknij dalej, aby przetworzyć płatność"
+    error:
+      headline: "Błąd w przetwarzaniu płatności"
+      content: "Niestety wystąpił błąd w przetwarzaniu płatności przez Przelewy24.pl - prosimy spróbować ponownie. W razie powtarzających się problemów, prosimy o kontakt."
   payment_success: Płatność poprawna
   currency: Waluta
   account_id: ID konta

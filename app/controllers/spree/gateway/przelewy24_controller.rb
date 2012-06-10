@@ -9,6 +9,9 @@ module Spree
       @gateway = @order.available_payment_methods.find{|x| x.id == params[:gateway_id].to_i }
       @order.payments.destroy_all
       payment = @order.payments.create!(:amount => 0, :payment_method_id => @gateway.id)
+      
+      @p24_session_id = Time.now.to_f.to_s
+      @p24_crc = przelewy24_transaction_crc(@gateway,@order,@p24_session_id)
   
       if @order.blank? || @gateway.blank?
         flash[:error] = I18n.t("invalid_arguments")
@@ -18,9 +21,16 @@ module Spree
       end
     end
     
-    # redirecting from przelewy24
+    def error
+      
+    end
+    
+    # response from przelewy24
     def complete    
-      @order = Order.find_by_number(params[:format])
+      @order = Order.find_by_number(params[:order_id])
+      
+      
+      
       session[:order_id]=nil
       if @order.state=="complete"
         redirect_to order_url(@order, {:checkout_complete => true, :order_token => @order.token}), :notice => I18n.t("payment_success")
@@ -33,49 +43,48 @@ module Spree
     def comeback
       @order = Order.find_by_number(params[:control])
       @gateway = @order && @order.payments.first.payment_method
+      
+      @response = przelewy24_verify(@gateway,@order,params)
   
-      if przelewy24_validate(@gateway, params, request.remote_ip)
-        if params[:t_status]=="2" # dotpay state for payment confirmed
-          dotpay_pl_payment_success(params)
-        elsif params[:t_status] == "4" or params[:t_status] == "5" #dotpay states for cancellation and so on
-          dotpay_pl_payment_cancel(params)
-        elsif params[:t_status] == "1"  #dotpay state for starting payment processing (1)
-          dotpay_pl_payment_new(params) 
-        end
-        render :text => "OK"
-      else
-        render :text => "Not valid"
-      end    
+      
+        render :text => @response   
     end
   
   
     private
   
     # validating dotpay message
-    def przelewy24_validate(gateway, params, remote_ip)    
-      calc_md5 = Digest::MD5.hexdigest(@gateway.preferred_pin + ":" +
-        (params[:id].nil? ? "" : params[:id]) + ":" +
-        (params[:control].nil? ? "" : params[:control]) + ":" +
-        (params[:t_id].nil? ? "" : params[:t_id]) + ":" +
-        (params[:amount].nil? ? "" : params[:amount]) + ":" +
-        (params[:email].nil? ? "" : params[:email]) + ":" +
-        (params[:service].nil? ? "" : params[:service]) + ":" +
-        (params[:code].nil? ? "" : params[:code]) + ":" +
-        ":" +
-        ":" +
-        (params[:t_status].nil? ? "" : params[:t_status]))
-        md5_valid = (calc_md5 == params[:md5])
-  
-        if (remote_ip == @gateway.preferred_dotpay_server_1 || remote_ip == @gateway.preferred_dotpay_server_2) && md5_valid
-          valid = true #yes, it is
-        else
-         valid = false #no, it isn't
-        end 
-        valid
+    def przelewy24_transaction_crc(gateway,order,session_id)    
+      calc_md5 = Digest::MD5.hexdigest(session_id + "|" +
+        (@gateway.preferred_p24_id_sprzedawcy.nil? ? "" : @gateway.preferred_p24_id_sprzedawcy) + "|" +
+        (@gateway.p24_amount(@order.total).nil? ? "" : @gateway.p24_amount(@order.total)) + "|" +
+        (@gateway.preferred_crc_key.nil? ? "" : @gateway.preferred_crc_key))
+        
+        return calc_md5
+      
+    end
+    
+    def przelewy24_verify(gateway,order,params)
+      require 'net/https'
+      require 'open-uri'
+      
+      params = {:p24_session_id => params[:p24_session_id], :p24_order_id => params[:p24_order_id], :p24_id_sprzedawcy => @gateway.preferred_p24_id_sprzedawcy, :p24_kwota => params[:p24_kwota], :p24_crc => params[:p24_crc]}
+      
+      url = URI.parse(@gateway.transakcja_url)
+      req = Net::HTTP::Post.new(url.path)
+      req.form_data = params
+      #req.basic_auth url.user, url.password if url.user
+      con = Net::HTTP.new(url.host, url.port)
+      con.use_ssl = true
+      con.start do |http| 
+        response = http.request(req)
+        return response.body
+      end
+      
     end
   
     # Completed payment process
-    def przlewy24_payment_success(params)
+    def przelewy24_payment_success(params)
       @order.payment.started_processing
       if @order.total.to_f == params[:amount].to_f      
         @order.payment.complete     

@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
 
   s.author            = 'Grzegorz Brzezinka'
   s.email             = 'info@matfiz.com.pl'
-  # s.homepage          = 'http://www.rubyonrails.org'
+  s.homepage          = 'https://github.com/matfiz/spree_przelewy24'
   # s.rubyforge_project = 'actionmailer'
 
   s.files        = Dir['CHANGELOG', 'README.md', 'LICENSE', 'lib/**/*', 'app/**/*']

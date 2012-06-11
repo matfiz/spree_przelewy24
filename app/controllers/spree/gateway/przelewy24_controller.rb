@@ -24,7 +24,7 @@ module Spree
     end
     
     def error
-      
+      @order = Order.find(params[:order_id])
     end
     
   
